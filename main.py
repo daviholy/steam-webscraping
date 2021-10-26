@@ -1,6 +1,6 @@
 import requests
 import bs4
-
+import pandas as pd
 PAGES=8
 if __name__ == "__main__":
     names=[]
@@ -20,4 +20,6 @@ if __name__ == "__main__":
             currentPlayers.append(int(game.find('td','num').string))
             peakPlayers.append(int(game.find('td','peak-concurrent').string))
             hoursPlayed.append(int(game.find('td','player-hours').string))
-    pass
+
+    df = pd.DataFrame({'name':names,'appID':appID})
+    df.to_csv("ScrapedData/topGames.csv")
