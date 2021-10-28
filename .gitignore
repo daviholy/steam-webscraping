@@ -1,2 +1,3 @@
 ScrapedData/**
 *.profile
+.vscode/**

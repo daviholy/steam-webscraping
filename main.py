@@ -8,13 +8,14 @@ import datetime
 import argparse
 from time import sleep
 
-from requests.api import request
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("pages", help="insert number of pages to scrap from steamcharts, type=int")
+    parser.add_argument("pages", help="insert number of pages to scrap from steamcharts", type=int)
+    parser.add_argument('-l','--log', help="log the problematic games into the specified file")
     args = parser.parse_args()
 
+    if args.log:
+        log =["name appID \n\n"]
     names=[]
     appID=[]
 
@@ -44,7 +45,7 @@ if __name__ == "__main__":
     genre = []
     tags = []
     #scraping data from steamcharts
-    for page in range(1,int(args.pages) + 1):
+    for page in range(1,args.pages + 1):
         response = requests.get("https://steamcharts.com/top/p." + str(page))
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
@@ -92,13 +93,34 @@ if __name__ == "__main__":
         peakpl.append(int(data[4].text.strip()))
         gain.append(0)
         gainper.append(0)
-    print(f'\U00002714 top {int(args.pages) * 25} games scraped from steamcharts.com')
+        sys.stdout.write(f'scraping from steamchart: {game} \ {len(appID)}\r')
+        sys.stdout.flush()
+    print(f'\U00002714 top {args.pages * 25} games scraped from steamcharts.com')
     #scraping from steam API
     for game in range(len(appID)):
         response=requests.get("https://store.steampowered.com/api/appdetails",params={"appids":appID[game]})
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
-        data =response.json()[str(appID[game])]['data']
+        try:
+            data =response.json()[str(appID[game])]
+            data = data['data']
+        except Exception:
+            #invalid games append infos with null values
+            developers.append(None)
+            publishers.append(None)
+            windows.append(None)
+            mac.append(None)
+            linux.append(None)
+            metacriticScore.append(None)
+            positiveRev.append(None)
+            negativeRev.append(None)
+            positiveRevPer.append(None)
+            languages.append(None)
+            genre.append(None)
+            tags.append(None)
+            if args.log:
+               log.append(f'{names[game]} {appID[game]}\n')
+            continue
         try:
             developers.append(data['developers'])
         except Exception:
@@ -134,7 +156,7 @@ if __name__ == "__main__":
         languages.append(data['languages'].split(", "))
         genre.append(data['genre'].split(", "))
         tags.append(list(data['tags']))
-        sys.stdout.write(f'scraping from steam: {game} \ {len(appID)}\r')
+        sys.stdout.write(f'scraping from steam: {game} \ {len(appID)}\r') #updating progress bar which is overwrited after done
         sys.stdout.flush()
         sleep(1.5)
     #creating dataframes
@@ -147,3 +169,6 @@ if __name__ == "__main__":
     except Exception:
         pass
     result.to_json("ScrapedData/topGames.csv", orient="records")
+    if args.log:
+        with open(args.log,'w') as f:
+            f.writelines(log) 
