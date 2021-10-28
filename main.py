@@ -2,14 +2,19 @@ import requests
 import bs4
 import pandas as pd
 import os
+import sys
 import time
 import datetime
+import argparse
 from time import sleep
 
 from requests.api import request
 
-PAGES=1
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("pages", help="insert number of pages to scrap from steamcharts, type=int")
+    args = parser.parse_args()
+
     names=[]
     appID=[]
 
@@ -39,11 +44,11 @@ if __name__ == "__main__":
     genre = []
     tags = []
     #scraping data from steamcharts
-    for page in range(1,PAGES + 1):
+    for page in range(1,args.pages + 1):
         response = requests.get("https://steamcharts.com/top/p." + str(page))
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
-        soup = bs4.BeautifulSoup(response.text, features="html.parser")
+        soup = bs4.BeautifulSoup(response.text, features="lxml")
         games = soup.find_all('tr')
         games.pop(0)
         for game in games:
@@ -55,7 +60,7 @@ if __name__ == "__main__":
         response = requests.get(f'https://steamcharts.com/app/{appID[game]}')
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
-        soup = bs4.BeautifulSoup(response.text, features="html.parser").tbody
+        soup = bs4.BeautifulSoup(response.text, features="lxml").tbody
         months = soup.find_all('tr')
         if len(months) > 1:
             data = months[0].find_all('td')
@@ -87,13 +92,13 @@ if __name__ == "__main__":
         peakpl.append(int(data[4].text.strip()))
         gain.append(0)
         gainper.append(0)
-        print(f'\U00002714 top {PAGES * 25} games scraped from steamcharts.com')
+    print(f'\U00002714 top {args.pages * 25} games scraped from steamcharts.com')
     #scraping from steam API
-    for game in appID:
-        response=requests.get("https://store.steampowered.com/api/appdetails",params={"appids": game})
+    for game in range(len(appID)):
+        response=requests.get("https://store.steampowered.com/api/appdetails",params={"appids":appID[game]})
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
-        data =response.json()[str(game)]['data']
+        data =response.json()[str(appID[game])]['data']
         try:
             developers.append(data['developers'])
         except Exception:
@@ -119,7 +124,7 @@ if __name__ == "__main__":
         except Exception:
             metacriticScore.append(-1)
         #scraping from steamSpy
-        response=requests.get("https://steamspy.com/api.php",params={"request" : "appdetails", "appids": game})
+        response=requests.get("https://steamspy.com/api.php",params={"request" : "appdetails", "appids":appID[game]})
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
         data =response.json()
@@ -129,6 +134,8 @@ if __name__ == "__main__":
         languages.append(data['languages'].split(", "))
         genre.append(data['genre'].split(", "))
         tags.append(list(data['tags']))
+        sys.stdout.write(f'scraping from steam: {game} \ {len(appID)}\r')
+        sys.stdout.flush()
         sleep(1.5)
     #creating dataframes
     steam= pd.DataFrame({'appID': appID, 'developers':developers, 'publishers': publishers,'mac' :mac, 'linux' : linux, 'metacriticScore' : metacriticScore})
