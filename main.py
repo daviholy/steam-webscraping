@@ -54,13 +54,19 @@ if __name__ == "__main__":
         games.pop(0)
         for game in games:
             gameName=game.find('td','game-name')
-            names.append(gameName.a.string.strip())
+            try:
+                names.append(gameName.a.string.strip())
+            except Exception:
+                names.append("")
             appID.append(gameName.a['href'].split('/')[2])
+        sys.stdout.write(f'scraping top pages from steamchart: {page} \ {args.pages}\r')
+        sys.stdout.flush()
+    print(f'\U00002714 {args.pages} pages scraped from steamcharts.com')
     #scraping time data for scraped games
     for game in range(len(appID)):
         response = requests.get(f'https://steamcharts.com/app/{appID[game]}')
         if response.status_code != requests.codes.ok:
-            response.raise_for_status()
+            continue
         soup = bs4.BeautifulSoup(response.text, features="lxml").tbody
         months = soup.find_all('tr')
         if len(months) > 1:
