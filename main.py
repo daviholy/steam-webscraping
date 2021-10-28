@@ -44,7 +44,7 @@ if __name__ == "__main__":
     genre = []
     tags = []
     #scraping data from steamcharts
-    for page in range(1,args.pages + 1):
+    for page in range(1,int(args.pages) + 1):
         response = requests.get("https://steamcharts.com/top/p." + str(page))
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         peakpl.append(int(data[4].text.strip()))
         gain.append(0)
         gainper.append(0)
-    print(f'\U00002714 top {args.pages * 25} games scraped from steamcharts.com')
+    print(f'\U00002714 top {int(args.pages) * 25} games scraped from steamcharts.com')
     #scraping from steam API
     for game in range(len(appID)):
         response=requests.get("https://store.steampowered.com/api/appdetails",params={"appids":appID[game]})
