@@ -40,7 +40,6 @@ if __name__ == "__main__":
     #data from SteamSpy
     positiveRev = []
     negativeRev = []
-    positiveRevPer = [] 
     languages= []
     genre = []
     tags = []
@@ -118,12 +117,6 @@ if __name__ == "__main__":
             mac.append(None)
             linux.append(None)
             metacriticScore.append(None)
-            positiveRev.append(None)
-            negativeRev.append(None)
-            positiveRevPer.append(None)
-            languages.append(None)
-            genre.append(None)
-            tags.append(None)
             if args.log:
                log.append(f'{names[game]} {appID[game]}\n')
             continue
@@ -152,29 +145,43 @@ if __name__ == "__main__":
         except Exception:
             metacriticScore.append(-1)
         #scraping from steamSpy
-        response=requests.get("https://steamspy.com/api.php",params={"request" : "appdetails", "appids":appID[game]})
+        response=requests.get(f"https://steamspy.com/api.php?request=appdetails&appid={appID[game]}")
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
         data =response.json()
-        positiveRev.append(data['positive'])
-        negativeRev.append(data['negative'])
-        positiveRevPer.append(data['positive']/(data['positive'] + data['negative']))
-        languages.append(data['languages'].split(", "))
-        genre.append(data['genre'].split(", "))
-        tags.append(list(data['tags']))
+        try:
+            positiveRev.append(data['positive'])
+        except Exception:
+            positiveRev.append(0)
+        try:
+            negativeRev.append(data['negative'])
+        except Exception:
+            negativeRev.append(0)
+        try:
+            languages.append(data['languages'].split(", "))
+        except Exception:
+            languages.append([])
+        try:
+            genre.append(data['genre'].split(", "))
+        except Exception:
+            genre.append([])
+        try:
+            tags.append(list(data['tags']))
+        except:
+            tags.append([])
         sys.stdout.write(f'scraping from steam: {game} \ {len(appID)}\r') #updating progress bar which is overwrited after done
         sys.stdout.flush()
         sleep(1.5)
     #creating dataframes
-    steam= pd.DataFrame({'appID': appID, 'developers':developers, 'publishers': publishers,'mac' :mac, 'linux' : linux, 'metacriticScore' : metacriticScore})
+    steam= pd.DataFrame({'appID': appID, 'developers':developers, 'publishers': publishers,'mac' :mac, 'linux' : linux, 'windows' : windows, 'metacriticScore' : metacriticScore})
     df = pd.DataFrame({'timeStamp':timeStamp,'gameName':gameNames, 'appID': appIDS,'averagePlayers':avgPlayers,'gain':gain ,'gainPercentage':gainper,'peakPlayers':peakpl})
-    steamSpy = pd.DataFrame({'appID' : appID, 'positive reviews':positiveRev, 'negative reviews':negativeRev, 'share of positive reviews' : positiveRevPer, 'supported languages':languages, 'genres' : genre, 'tags' : tags})
+    steamSpy = pd.DataFrame({'appID' : appID, 'positive reviews':positiveRev, 'negative reviews':negativeRev, 'supported languages':languages, 'genres' : genre, 'tags' : tags})
     result = df.set_index('appID').join(steam.set_index('appID')).join(steamSpy.set_index('appID'))
     try:
         os.mkdir("ScrapedData")
     except Exception:
         pass
-    result.to_json("ScrapedData/topGames.csv", orient="records")
+    result.to_json("ScrapedData/topGames.json", orient="records")
     if args.log:
         with open(args.log,'w') as f:
             f.writelines(log) 
