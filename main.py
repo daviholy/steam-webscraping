@@ -117,17 +117,22 @@ if __name__ == "__main__":
             mac.append(None)
             linux.append(None)
             metacriticScore.append(None)
+            positiveRev.append(-1)
+            negativeRev.append(-1)
+            languages.append(None)
+            genre.append(None)
+            tags.append(None)
             if args.log:
                log.append(f'{names[game]} {appID[game]}\n')
             continue
         try:
             developers.append(data['developers'])
         except Exception:
-            developers.append({})
+            developers.append(None)
         try:
             publishers.append(data['publishers'])
         except Exception:
-            publishers.append({})
+            publishers.append(None)
         try:
             windows.append(data['platforms']['windows'])
         except Exception:
@@ -152,23 +157,23 @@ if __name__ == "__main__":
         try:
             positiveRev.append(data['positive'])
         except Exception:
-            positiveRev.append(0)
+            positiveRev.append(-1)
         try:
             negativeRev.append(data['negative'])
         except Exception:
-            negativeRev.append(0)
+            negativeRev.append(-1)
         try:
             languages.append(data['languages'].split(", "))
         except Exception:
-            languages.append([])
+            languages.append(None)
         try:
             genre.append(data['genre'].split(", "))
         except Exception:
-            genre.append([])
+            genre.append(None)
         try:
             tags.append(list(data['tags']))
         except:
-            tags.append([])
+            tags.append(None)
         sys.stdout.write(f'scraping from steam: {game} \ {len(appID)}\r') #updating progress bar which is overwrited after done
         sys.stdout.flush()
         sleep(1.5)
