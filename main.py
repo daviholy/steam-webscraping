@@ -9,6 +9,19 @@ import argparse
 from time import sleep
 
 if __name__ == "__main__":
+    def invalidSteamGame():
+        developers.append(None)
+        publishers.append(None)
+        windows.append(None)
+        mac.append(None)
+        linux.append(None)
+        metacriticScore.append(None)
+        positiveRev.append(-1)
+        negativeRev.append(-1)
+        languages.append(None)
+        genre.append(None)
+        tags.append(None)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("pages", help="insert number of pages to scrap from steamcharts", type=int)
     parser.add_argument('-l','--log', help="log the problematic games into the specified file")
@@ -105,23 +118,14 @@ if __name__ == "__main__":
     for game in range(len(appID)):
         response=requests.get("https://store.steampowered.com/api/appdetails",params={"appids":appID[game]})
         if response.status_code != requests.codes.ok:
-            response.raise_for_status()
+            invalidSteamGame()
+            continue
         try:
             data =response.json()[str(appID[game])]
             data = data['data']
         except Exception:
             #invalid games append infos with null values
-            developers.append(None)
-            publishers.append(None)
-            windows.append(None)
-            mac.append(None)
-            linux.append(None)
-            metacriticScore.append(None)
-            positiveRev.append(-1)
-            negativeRev.append(-1)
-            languages.append(None)
-            genre.append(None)
-            tags.append(None)
+            invalidSteamGame()
             if args.log:
                log.append(f'{names[game]} {appID[game]}\n')
             continue
@@ -136,15 +140,15 @@ if __name__ == "__main__":
         try:
             windows.append(data['platforms']['windows'])
         except Exception:
-            windows.append(False)
+            windows.append(None)
         try:
             mac.append(data['platforms']['mac'])
         except Exception:
-            mac.append(False)
+            mac.append(None)
         try:
             linux.append(data['platforms']['linux'])
         except Exception:
-            linux.append(False)
+            linux.append(None)
         try:
             metacriticScore.append(data['metacritic']['score'])
         except Exception:
@@ -152,7 +156,11 @@ if __name__ == "__main__":
         #scraping from steamSpy
         response=requests.get(f"https://steamspy.com/api.php?request=appdetails&appid={appID[game]}")
         if response.status_code != requests.codes.ok:
-            response.raise_for_status()
+            positiveRev.append(-1)
+            negativeRev.append(-1)
+            languages.append(None)
+            tags.append(None)
+            genre.append(None)
         data =response.json()
         try:
             positiveRev.append(data['positive'])
